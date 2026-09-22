@@ -1296,16 +1296,28 @@
                 });
         }
 
-        let globalDemandData = null; // Stores data for PDF generation
+        // --- ESC KEY LISTENER TO CLOSE ANY MODAL ON LAPTOP ---
+        document.addEventListener('keydown', function(event) {
+            if (event.key === "Escape") {
+                if(!document.getElementById('demand-modal').classList.contains('hidden')) closeDemandModal();
+                if(!document.getElementById('billing-modal').classList.contains('hidden')) closeBillingModal();
+                if(!document.getElementById('analytics-modal').classList.contains('hidden')) closeAnalyticsModal();
+                if(!document.getElementById('admin-modal').classList.contains('hidden')) toggleAdminModal();
+                if(!document.getElementById('qr-modal').classList.contains('hidden')) closeQrModal();
+                if(!document.getElementById('cart-modal').classList.contains('hidden')) toggleCartModal();
+            }
+        });
 
-        // --- NEW: DEMAND ANALYTICS LOGIC ---
+        let globalDemandData = null; 
+        let demandChartInstance = null; // Store chart to destroy it between loads
+
+        // --- DEMAND ANALYTICS LOGIC ---
         function openDemandAnalytics() {
             toggleStaffMenu();
             document.getElementById('demand-modal').classList.remove('hidden');
             document.getElementById('demand-modal').classList.add('flex');
             document.body.style.overflow = 'hidden';
             
-            // Auto-fill dates to current month
             const today = new Date();
             const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
             document.getElementById('demand-start').value = firstDay.toISOString().split('T')[0];
@@ -1344,40 +1356,76 @@
                 .then(data => {
                     globalDemandData = { ...data, start, end };
                     
-                    document.getElementById('demand-peak-time').innerText = data.peakTime;
+                    // Populate Top 10 By Quantity
+                    const qtyContainer = document.getElementById('demand-top-qty');
+                    qtyContainer.innerHTML = '';
+                    if(data.top10Qty.length === 0) qtyContainer.innerHTML = '<li class="text-gray-500 italic">No orders.</li>';
+                    else data.top10Qty.forEach((item, index) => {
+                        qtyContainer.innerHTML += `<li class="flex justify-between"><span>${index+1}. ${item.name}</span> <span class="font-bold text-orange-600">${item.count}</span></li>`;
+                    });
+
+                    // Populate Top 10 By Value
+                    const valContainer = document.getElementById('demand-top-val');
+                    valContainer.innerHTML = '';
+                    if(data.top10Val.length === 0) valContainer.innerHTML = '<li class="text-gray-500 italic">No orders.</li>';
+                    else data.top10Val.forEach((item, index) => {
+                        valContainer.innerHTML += `<li class="flex justify-between"><span>${index+1}. ${item.name}</span> <span class="font-bold text-green-600">₹${item.value.toFixed(0)}</span></li>`;
+                    });
+
+                    // Draw Chart.js
+                    if (demandChartInstance) demandChartInstance.destroy();
+                    const ctx = document.getElementById('demandChart').getContext('2d');
                     
-                    const top10Container = document.getElementById('demand-top-10');
-                    top10Container.innerHTML = '';
-                    if(data.top10.length === 0) {
-                        top10Container.innerHTML = '<li class="text-gray-500 italic">No orders in this period.</li>';
-                    } else {
-                        data.top10.forEach((item, index) => {
-                            top10Container.innerHTML += `<li class="flex justify-between border-b border-gray-100 pb-1 last:border-0"><span>${index+1}. ${item.name}</span> <span class="font-bold text-brand">${item.count}</span></li>`;
-                        });
-                    }
+                    // Create X-axis labels (12 AM to 11 PM)
+                    const labels = Array.from({length: 24}, (_, i) => {
+                        const ampm = i >= 12 ? 'PM' : 'AM';
+                        const h = i % 12 || 12;
+                        return `${h} ${ampm}`;
+                    });
+
+                    demandChartInstance = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Orders placed',
+                                data: data.hourlyData,
+                                backgroundColor: '#ea580c',
+                                borderRadius: 4,
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: { legend: { display: false } },
+                            scales: {
+                                y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 10 } } },
+                                x: { ticks: { font: { size: 9 }, maxRotation: 45, minRotation: 45 } }
+                            }
+                        }
+                    });
                     
                     document.getElementById('demand-results').classList.remove('hidden');
                     document.getElementById('demand-results').classList.add('flex');
-                    
-                    btn.innerText = "Analyze Demand";
-                    btn.disabled = false;
+                    btn.innerText = "Analyze Demand"; btn.disabled = false;
                 })
                 .catch(e => {
                     alert("Error fetching data");
-                    btn.innerText = "Analyze Demand";
-                    btn.disabled = false;
+                    btn.innerText = "Analyze Demand"; btn.disabled = false;
                 });
         }
 
         function printDemandReport() {
             if(!globalDemandData) return;
-            const { start, end, fullList, peakTime } = globalDemandData;
+            const { start, end, fullList, hourlyData } = globalDemandData;
 
             const printWindow = window.open('', '_blank');
-            let tableRows = fullList.map(item => `
+            let tableRows = fullList.map((item, index) => `
                 <tr>
+                    <td style="padding: 8px; border-bottom: 1px solid #ddd;">${index + 1}</td>
                     <td style="padding: 8px; border-bottom: 1px solid #ddd;">${item.name}</td>
-                    <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: right; font-weight:bold;">${item.count}</td>
+                    <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: center;">${item.count}</td>
+                    <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: right;">₹${item.value.toFixed(2)}</td>
                 </tr>
             `).join('');
 
@@ -1396,14 +1444,17 @@
                 <body>
                     <h1>Hei Haya Cafe - Item Demand Report</h1>
                     <p><strong>Period:</strong> ${start} to ${end}</p>
-                    
                     <div class="summary">
-                        <strong>Peak Order Time:</strong> ${peakTime}
+                        <strong>Note:</strong> Showing all ordered items sorted by quantity.
                     </div>
-
                     <table>
                         <thead>
-                            <tr><th>Item Name</th><th style="text-align: right;">Total Quantity Sold</th></tr>
+                            <tr>
+                                <th style="width: 50px;">Rank</th>
+                                <th>Item Name</th>
+                                <th style="text-align: center;">Quantity Sold</th>
+                                <th style="text-align: right;">Revenue Generated</th>
+                            </tr>
                         </thead>
                         <tbody>
                             ${tableRows}
