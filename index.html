@@ -609,6 +609,8 @@
             const modal = document.getElementById('admin-modal');
             if (modal.classList.contains('hidden')) {
                 modal.classList.remove('hidden'); modal.classList.add('flex'); document.body.style.overflow = 'hidden';
+                // Auto-focus the Admin Username box
+                setTimeout(() => { document.getElementById('admin-user').focus(); }, 100);
             } else {
                 modal.classList.add('hidden'); modal.classList.remove('flex'); document.body.style.overflow = '';
             }
