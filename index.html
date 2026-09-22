@@ -1128,6 +1128,11 @@
             document.getElementById('analytics-modal').classList.remove('hidden');
             document.getElementById('analytics-modal').classList.add('flex');
             document.body.style.overflow = 'hidden';
+            
+            // Auto-focus the PIN input box
+            setTimeout(() => {
+                document.getElementById('owner-pin-input').focus();
+            }, 100);
         }
         function closeAnalyticsModal() {
             document.getElementById('analytics-modal').classList.add('hidden');
