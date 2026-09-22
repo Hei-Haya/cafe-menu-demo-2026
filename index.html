@@ -1379,6 +1379,7 @@
         // --- ESC KEY LISTENER TO CLOSE ANY MODAL ON LAPTOP ---
         document.addEventListener('keydown', function(event) {
             if (event.key === "Escape") {
+                if(!document.getElementById('staff-pin-modal').classList.contains('hidden')) closeStaffPinModal();
                 if(!document.getElementById('demand-modal').classList.contains('hidden')) closeDemandModal();
                 if(!document.getElementById('billing-modal').classList.contains('hidden')) closeBillingModal();
                 if(!document.getElementById('analytics-modal').classList.contains('hidden')) closeAnalyticsModal();
