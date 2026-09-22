@@ -459,43 +459,82 @@
             document.getElementById('print-section').style.display = ''; 
         }
         
-        // --- NEW: FETCH LIVE MENU ---
+        // --- NEW: FETCH LIVE MENU (WITH LIGHTNING-FAST CACHING) ---
         function fetchMenu() {
             const container = document.getElementById('menu-container');
-            container.innerHTML = `
-                <div class="text-center py-16 flex flex-col items-center justify-center">
-                    <svg class="animate-spin h-10 w-10 text-brand mx-auto mb-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                    <div class="space-y-2 animate-pulse">
-                        <p class="text-gray-800 font-black tracking-widest uppercase text-sm">Loading Live Menu...</p>
-                        <p class="text-brand font-medium text-sm">Ngaihaktang ngaiminnasi...</p>
-                        <p class="text-gray-500 text-xs font-medium">Expected wait time - 5 to 10 Secs</p>
-                    </div>
-                </div>`;
+            
+            // 1. Try to load from the phone's browser memory instantly
+            const cachedMenu = localStorage.getItem('hei_haya_menu');
+            const cachedConfig = localStorage.getItem('hei_haya_config');
+            let isCached = false;
+            
+            if (cachedMenu && cachedConfig) {
+                try {
+                    menuData = JSON.parse(cachedMenu);
+                    const config = JSON.parse(cachedConfig);
+                    STAFF_PIN = config.staffPin;
+                    OWNER_PIN = config.ownerPin;
+                    RESTAURANT_WHATSAPP_NUMBER = config.restWa;
+                    KITCHEN_WHATSAPP_NUMBER = config.kitchenWa;
+                    UPI_ID = config.upiId;
+                    PAYEE_NAME = config.payeeName;
+                    
+                    renderMenu();
+                    restoreCartFromURL();
+                    isCached = true;
+                } catch(e) {
+                    console.log("Cache invalid");
+                }
+            }
 
+            // 2. If nothing is in memory (first time ever loading), show the spinner
+            if (!isCached) {
+                container.innerHTML = `
+                    <div class="text-center py-16 flex flex-col items-center justify-center">
+                        <svg class="animate-spin h-10 w-10 text-brand mx-auto mb-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                        <div class="space-y-2 animate-pulse">
+                            <p class="text-gray-800 font-black tracking-widest uppercase text-sm">Loading Live Menu...</p>
+                            <p class="text-brand font-medium text-sm">Ngaihaktang ngaiminnasi...</p>
+                            <p class="text-gray-500 text-xs font-medium">Expected wait time - 5 to 10 Secs</p>
+                        </div>
+                    </div>`;
+            }
+
+            // 3. Silently fetch the latest data from Google in the background
             fetch(`${GOOGLE_SCRIPT_URL}?action=getMenu`)
                 .then(res => res.json())
                 .then(data => {
                     if (data.success) {
-                        menuData = data.menu;
+                        const newMenuStr = JSON.stringify(data.menu);
+                        const newConfigStr = JSON.stringify(data.config);
                         
-                        // INJECT CONFIGURATION FROM SHEET
-                        if(data.config) {
-                            STAFF_PIN = data.config.staffPin;
-                            OWNER_PIN = data.config.ownerPin;
-                            RESTAURANT_WHATSAPP_NUMBER = data.config.restWa;
-                            KITCHEN_WHATSAPP_NUMBER = data.config.kitchenWa;
-                            UPI_ID = data.config.upiId;
-                            PAYEE_NAME = data.config.payeeName;
+                        // Only re-draw the screen if your brother actually changed something in the Sheet
+                        if (!isCached || cachedMenu !== newMenuStr || cachedConfig !== newConfigStr) {
+                            menuData = data.menu;
+                            if(data.config) {
+                                STAFF_PIN = data.config.staffPin;
+                                OWNER_PIN = data.config.ownerPin;
+                                RESTAURANT_WHATSAPP_NUMBER = data.config.restWa;
+                                KITCHEN_WHATSAPP_NUMBER = data.config.kitchenWa;
+                                UPI_ID = data.config.upiId;
+                                PAYEE_NAME = data.config.payeeName;
+                            }
+                            
+                            // Save the fresh data to phone memory for next time
+                            localStorage.setItem('hei_haya_menu', newMenuStr);
+                            localStorage.setItem('hei_haya_config', newConfigStr);
+                            
+                            renderMenu();
+                            if (!isCached) restoreCartFromURL(); 
                         }
-                        
-                        renderMenu();
-                        restoreCartFromURL(); // If staff is scanning a QR, load the cart!
-                    } else {
+                    } else if (!isCached) {
                         container.innerHTML = '<div class="text-center text-red-500 py-10 font-bold">Failed to load menu.</div>';
                     }
                 })
                 .catch(err => {
-                    container.innerHTML = '<div class="text-center text-red-500 py-10 font-bold">Network Error. Check connection.</div>';
+                    if (!isCached) {
+                        container.innerHTML = '<div class="text-center text-red-500 py-10 font-bold">Network Error. Check connection.</div>';
+                    }
                 });
         }
 
