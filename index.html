@@ -1118,6 +1118,9 @@
             document.body.style.overflow = 'hidden';
             // Pre-fill today's date
             document.getElementById('b-order-date').value = `${currentYear}-${currentMonth}-${currentDay}`;
+            
+            // Auto-focus the Order Sequence input box
+            setTimeout(() => { document.getElementById('b-seq-input').focus(); }, 100);
         }
         function closeBillingModal() {
             document.getElementById('billing-modal').classList.add('hidden');
