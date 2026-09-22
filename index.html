@@ -1366,6 +1366,11 @@
             const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
             document.getElementById('demand-start').value = firstDay.toISOString().split('T')[0];
             document.getElementById('demand-end').value = today.toISOString().split('T')[0];
+
+            // Auto-focus the PIN input box
+            setTimeout(() => {
+                document.getElementById('demand-pin-input').focus();
+            }, 100);
         }
 
         function closeDemandModal() {
