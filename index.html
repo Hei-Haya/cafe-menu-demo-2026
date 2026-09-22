@@ -614,6 +614,19 @@
             // --- NEW: Wipe URL parameters clean so a refresh doesn't reload the old order ---
             window.history.replaceState(null, '', window.location.pathname);
             
+            // --- NEW FIX: Revert the UI back to standard customer mode if not permanently logged in ---
+            if (!isStaffMode) {
+                const subtitle = document.getElementById('header-subtitle');
+                subtitle.innerText = "Tap to add items";
+                subtitle.classList.replace('text-blue-600', 'text-brand');
+                subtitle.classList.replace('text-red-600', 'text-brand'); 
+                
+                document.getElementById('customer-buttons').classList.remove('hidden');
+                document.getElementById('customer-buttons').classList.add('flex');
+                document.getElementById('staff-buttons').classList.add('hidden');
+                document.getElementById('staff-buttons').classList.remove('flex');
+            }
+            
             updateUI(); // This will auto-close the cart modal because the cart is empty
         }
 
