@@ -330,12 +330,13 @@
             </div>
         </div>
         <!-- NEW: Demand Analytics Modal -->
-        <div id="demand-modal" class="fixed inset-0 bg-gray-900/80 z-50 hidden flex-col items-center justify-start sm:justify-center p-4 sm:p-6 overflow-y-auto pt-10">
-            <div class="bg-white rounded-3xl shadow-xl w-full max-w-md p-6 sm:p-8 relative my-auto animate-slide-up">
-                <button onclick="closeDemandModal()" class="absolute top-5 right-5 text-gray-400 hover:text-gray-600 z-40"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
+        <div id="demand-modal" class="fixed inset-0 bg-gray-900/80 z-50 hidden flex-col items-center justify-start p-4 sm:p-6 overflow-y-auto">
+            <!-- Changed "my-auto" to "mt-10 mb-10" so the modal never gets cut off at the top on laptops -->
+            <div class="bg-white rounded-3xl shadow-xl w-full max-w-lg p-6 sm:p-8 relative mt-10 mb-10 mx-auto animate-slide-up shrink-0">
+                <button onclick="closeDemandModal()" class="absolute top-5 right-5 text-gray-400 hover:text-gray-600 z-40 bg-white rounded-full p-1"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
 
                 <!-- PIN Overlay -->
-                <div id="demand-overlay" class="absolute inset-0 bg-white/80 backdrop-blur-md z-30 flex flex-col items-center justify-center rounded-3xl transition-opacity duration-500">
+                <div id="demand-overlay" class="absolute inset-0 bg-white/90 backdrop-blur-md z-30 flex flex-col items-center justify-center rounded-3xl transition-opacity duration-500">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-gray-800 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
                     <p class="text-sm font-bold text-gray-900 mb-4 uppercase tracking-widest">Demand Analytics</p>
                     <div class="flex gap-2 relative z-30">
@@ -361,17 +362,27 @@
                     </div>
 
                     <div id="demand-results" class="hidden flex-col gap-4 mt-4">
-                        <div class="bg-orange-50 p-4 rounded-xl border border-orange-100">
-                            <p class="text-xs font-bold text-orange-600 uppercase mb-2">Peak Demand Time</p>
-                            <p id="demand-peak-time" class="text-xl font-black text-gray-900">Loading...</p>
+                        <!-- Demand Graph -->
+                        <div class="bg-white border border-gray-200 p-4 rounded-xl shadow-sm">
+                            <p class="text-xs font-bold text-gray-700 uppercase mb-2">Hourly Order Demand (Peak Time)</p>
+                            <div class="w-full h-40">
+                                <canvas id="demandChart"></canvas>
+                            </div>
                         </div>
 
-                        <div class="border border-gray-200 rounded-xl p-4 bg-white">
-                            <p class="text-xs font-bold text-gray-700 uppercase mb-2">Top 10 Most Ordered Items</p>
-                            <ul id="demand-top-10" class="text-sm text-gray-800 space-y-1 font-medium"></ul>
+                        <!-- Top 10 Grids -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="border border-orange-200 rounded-xl p-4 bg-orange-50/50">
+                                <p class="text-[10px] font-bold text-orange-600 uppercase mb-2 border-b border-orange-200 pb-1">Top 10 By Quantity</p>
+                                <ul id="demand-top-qty" class="text-xs text-gray-800 space-y-1.5 font-medium"></ul>
+                            </div>
+                            <div class="border border-green-200 rounded-xl p-4 bg-green-50/50">
+                                <p class="text-[10px] font-bold text-green-600 uppercase mb-2 border-b border-green-200 pb-1">Top 10 By Value (₹)</p>
+                                <ul id="demand-top-val" class="text-xs text-gray-800 space-y-1.5 font-medium"></ul>
+                            </div>
                         </div>
 
-                        <button onclick="printDemandReport()" class="w-full bg-blue-600 text-white px-4 py-3 rounded-lg font-bold text-sm hover:bg-blue-700 flex justify-center items-center gap-2 transition-colors">
+                        <button onclick="printDemandReport()" class="w-full bg-blue-600 text-white px-4 py-3 rounded-lg font-bold text-sm hover:bg-blue-700 flex justify-center items-center gap-2 transition-colors mt-2">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
                             Generate Full PDF Report
                         </button>
