@@ -933,11 +933,30 @@
         // 2. STAFF CONFIRMS ORDER (Frontend Logic)
         // ========================================== 
         function confirmAndLogOrder() {
-            const enteredPin = prompt("Enter Staff PIN to confirm this order:");
+            document.getElementById('staff-pin-modal').classList.remove('hidden');
+            document.getElementById('staff-pin-modal').classList.add('flex');
+            
+            // Immediately focus the input so the mobile keyboard pops up instantly
+            const pinInput = document.getElementById('staff-pin-input');
+            pinInput.value = '';
+            pinInput.focus();
+            setTimeout(() => { pinInput.focus(); }, 100); // Backup for slower phones
+        }
+
+        function closeStaffPinModal() {
+            document.getElementById('staff-pin-modal').classList.add('hidden');
+            document.getElementById('staff-pin-modal').classList.remove('flex');
+        }
+
+        function processOrderAfterPin() {
+            const enteredPin = document.getElementById('staff-pin-input').value.trim();
             if (enteredPin !== STAFF_PIN) {
                 alert("Incorrect PIN. Order not confirmed.");
+                document.getElementById('staff-pin-input').value = '';
+                document.getElementById('staff-pin-input').focus();
                 return; 
             }
+            closeStaffPinModal();
 
             // READ LIVE INPUTS IN CASE WAITRESS CHANGED THEM
             let customerName = document.getElementById('customer-name').value.trim();
