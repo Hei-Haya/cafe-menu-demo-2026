@@ -1412,17 +1412,16 @@
             document.getElementById('demand-modal').classList.add('flex');
             document.body.style.overflow = 'hidden';
             
-            const today = new Date();
-            const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
-            document.getElementById('demand-start').value = firstDay.toISOString().split('T')[0];
-            document.getElementById('demand-end').value = today.toISOString().split('T')[0];
+            // Set both start and end dates to today, using the globally safely formatted local time
+            const localTodayStr = `${currentYear}-${currentMonth}-${currentDay}`;
+            document.getElementById('demand-start').value = localTodayStr;
+            document.getElementById('demand-end').value = localTodayStr;
 
             // Auto-focus the PIN input box
             setTimeout(() => {
                 document.getElementById('demand-pin-input').focus();
             }, 100);
         }
-
         function closeDemandModal() {
             document.getElementById('demand-modal').classList.add('hidden');
             document.getElementById('demand-modal').classList.remove('flex');
